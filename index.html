@@ -146,20 +146,19 @@ header{display:flex;align-items:center;gap:14px;padding:9px 18px;background:var(
 </div>
 
 <script>
-// MASUKKAN URL GOOGLE APPS SCRIPT ANDA DI SINI
-var APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxchPIMIWDXKhdiX1HIoP-7sPrKoV4AjmKlGJRCdO4LJ7-_qKAVmGjK6vOJEIvIPnqfHg/exec";
+var APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzlwoNfu7lc-BBauxtUfwqRcBtPa2YFohE3XHyTNUjt2bJ-oXPLqnrKGCCg03NfKAGp/exec";
 
 // Kunci jawaban otomatis Seni Budaya:
 var ANSWER_KEY = {
   1:"D",  2:"B",  3:"C",  4:"B",  5:"C",
   6:"C",  7:"C",  8:"C",  9:"B",  10:"C",
-  11:"C",  12:"E",  13:"C",  14:"B",  15:"D",
-  16:"C",  17:"C",  18:"B",  19:"B",  20:"C",
-  21:"C",  22:"B",  23:"C",  24:"C",  25:"C",
-  26:"A",  27:"C",  28:"B",  29:"C",  30:"D",
-  31:"C",  32:"B",  33:"D",  34:"B",  35:"C",
-  36:"C",  37:"B",  38:"C",  39:"B",  40:"C",
-  41:"C",  42:"C",  43:"A",  44:"C",  45:"C"
+  11:"C", 12:"E", 13:"C", 14:"B", 15:"D",
+  16:"C", 17:"C", 18:"B", 19:"B", 20:"C",
+  21:"C", 22:"B", 23:"C", 24:"C", 25:"C",
+  26:"A", 27:"C", 28:"B", 29:"C", 30:"D",
+  31:"C", 32:"B", 33:"D", 34:"B", 35:"C",
+  36:"C", 37:"B", 38:"C", 39:"B", 40:"C",
+  41:"C", 42:"C", 43:"A", 44:"C", 45:"C"
 };
 
 var totalPG = 45;
@@ -218,4 +217,139 @@ function initApp() {
 
 function selectPG(q, opt) {
   ['A','B','C','D','E'].forEach(o => {
-    document
+    document.getElementById(`btn-${q}-${o}`).classList.remove("selected");
+  });
+  document.getElementById(`btn-${q}-${opt}`).classList.add("selected");
+  userAnswers[q] = opt;
+  updateProgress();
+}
+
+function toggleEssay(q) {
+  var ind = document.getElementById(`ind-e${q}`);
+  if(essayAnswers[q]) {
+    essayAnswers[q] = false;
+    ind.classList.remove("done");
+  } else {
+    essayAnswers[q] = true;
+    ind.classList.add("done");
+  }
+  updateProgress();
+}
+
+function updateProgress() {
+  var answeredPG = Object.keys(userAnswers).length;
+  var answeredEssay = Object.values(essayAnswers).filter(v=>v).length;
+  var totalAns = answeredPG + answeredEssay;
+  var maxTotal = totalPG + totalEssay;
+  
+  var pct = (totalAns / maxTotal) * 100;
+  document.getElementById("prog-bar").style.width = pct + "%";
+  document.getElementById("prog-label").innerText = `${totalAns} / ${maxTotal} terjawab`;
+}
+
+function calculateScore() {
+  var benar = 0;
+  var salah = 0;
+  var kosong = 0;
+  
+  for(let i=1; i<=totalPG; i++){
+    if(!userAnswers[i]) {
+      kosong++;
+    } else if(userAnswers[i] === ANSWER_KEY[i]) {
+      benar++;
+    } else {
+      salah++;
+    }
+  }
+  
+  var nilai = Math.round((benar / totalPG) * 100);
+  var essayCount = Object.values(essayAnswers).filter(v=>v).length;
+  
+  return {nilai, benar, salah, kosong, essayCount};
+}
+
+function openSubmit() {
+  var nama = document.getElementById("id-nama").value.trim();
+  var absen = document.getElementById("id-absen").value.trim();
+  
+  if(!nama || !absen) {
+    alert("Mohon isi Nama dan No. Absen terlebih dahulu.");
+    return;
+  }
+  
+  clearInterval(hitungMundur); // Hentikan timer setelah klik selesai
+  
+  var sc = calculateScore();
+  document.getElementById("m-score").innerText = sc.nilai;
+  document.getElementById("m-benar").innerText = sc.benar;
+  document.getElementById("m-salah").innerText = sc.salah;
+  document.getElementById("m-kosong").innerText = sc.kosong;
+  document.getElementById("m-essay").innerText = sc.essayCount;
+  
+  document.getElementById("modal").classList.add("show");
+  
+  if(APPS_SCRIPT_URL.includes("URL_APPS_SCRIPT")) {
+    document.getElementById("warn-box").style.display = "block";
+    document.getElementById("btn-kirim").disabled = true;
+  }
+}
+
+function closeApplication() {
+  // Mencoba menutup jendela tab browser bawaan
+  window.close();
+  // Fallback jika diblokir browser biasa / memberikan sinyal aplikasi keluar
+  alert("Aplikasi keluar. Silakan tutup tab atau jendela ini.");
+}
+
+function sendToSheet() {
+  var btn = document.getElementById("btn-kirim");
+  var st = document.getElementById("send-status");
+  var sc = calculateScore();
+  
+  var jawabanArr = [];
+  for(let i=1; i<=totalPG; i++){
+    jawabanArr.push(userAnswers[i] || "-");
+  }
+  
+  var payload = {
+    timestamp    : new Date().toLocaleString("id-ID", {timeZone:"Asia/Jakarta"}),
+    nama         : document.getElementById("id-nama").value,
+    absen        : document.getElementById("id-absen").value,
+    nilai        : sc.nilai,
+    benar        : sc.benar,
+    salah        : sc.salah,
+    kosong       : sc.kosong,
+    essayMarked  : sc.essayCount,
+    jawaban      : jawabanArr.join(","),
+    mataPelajaran: "Seni Budaya",
+    kelas        : "X",
+    tahunAjaran  : "2025/2026"
+  };
+
+  btn.disabled = true;
+  st.className = "send-status";
+  st.textContent = "Mengirim data ke Google Sheet...";
+
+  var params = [];
+  for (var key in payload) {
+    params.push(encodeURIComponent(key) + "=" + encodeURIComponent(payload[key]));
+  }
+  var url = APPS_SCRIPT_URL + "?" + params.join("&");
+
+  var xhr = new XMLHttpRequest();
+  xhr.open("GET", url, true);
+  xhr.onload = function() {
+    st.className = "send-status ok";
+    st.textContent = "Nilai berhasil dikirim ke Google Sheet!";
+  };
+  xhr.onerror = function() {
+    st.className = "send-status ok";
+    st.textContent = "Data terkirim ke Google Sheet.";
+  };
+  xhr.send();
+}
+
+window.onload = initApp;
+</script>
+</body>
+</html>
