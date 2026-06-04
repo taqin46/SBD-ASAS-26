@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ASAT Seni Budaya &ndash; Kelas X | SRMA 3 Tebing Tinggi</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#0d1016;--panel:#13181f;--card:#1a2030;--border:#252e42;--accent:#4e8df5;--gold:#f5c842;--text:#e4e9f5;--muted:#6b7591;--green:#3ecf8e;--red:#f76470;--r:8px}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:"DM Sans",sans-serif;background:var(--bg);color:var(--text);height:100vh;display:flex;flex-direction:column;overflow:hidden}
+header{display:flex;align-items:center;gap:14px;padding:9px 18px;background:var(--panel);border-bottom:1px solid var(--border);flex-shrink:0}
+.h-title{font-family:"Playfair Display",serif;font-size:14px;white-space:nowrap}
+.h-title span{color:var(--gold)}
+.h-meta{display:flex;gap:14px;font-size:11px;color:var(--muted);flex-wrap:wrap;flex:1}
+.h-meta b{color:var(--gold)}
+#timer-display{color:var(--red);font-weight:600}
+.btn-submit{background:var(--accent);color:#fff;border:none;border-radius:var(--r);padding:8px 22px;font-family:"DM Sans",sans-serif;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;flex-shrink:0;transition:opacity .15s}
+.btn-submit:hover{opacity:.85}
+.main{display:flex;flex:1;overflow:hidden}
+.pdf-panel{flex:3;display:flex;flex-direction:column;border-right:2px solid var(--border);overflow:hidden}
+.pdf-toolbar{display:flex;align-items:center;gap:8px;padding:7px 12px;background:var(--panel);border-bottom:1px solid var(--border);flex-shrink:0}
+.pdf-toolbar button{background:var(--card);border:1px solid var(--border);color:var(--text);padding:4px 12px;border-radius:6px;font-size:12px;cursor:pointer;font-family:"DM Sans",sans-serif;transition:background .12s}
+.pdf-toolbar button:hover{background:var(--border)}
+.page-info{font-size:12px;color:var(--muted)}
+#pdf-container{flex:1;overflow:hidden;background:#1e2229;display:flex;justify-content:center;align-items:center;padding:0;}
+#pdf-container iframe{width:100%;height:100%;border:none;}
+.answer-panel{flex:1;min-width:215px;max-width:265px;display:flex;flex-direction:column;background:var(--panel);overflow:hidden}
+.ans-header{padding:11px 13px 8px;border-bottom:1px solid var(--border);flex-shrink:0}
+.ans-header h2{font-family:"Playfair Display",serif;font-size:13px;color:var(--gold);margin-bottom:6px}
+.prog-wrap{background:var(--border);border-radius:99px;height:4px;overflow:hidden}
+.prog-bar{height:100%;background:linear-gradient(90deg,var(--accent),#7ac8f5);border-radius:99px;transition:width .3s}
+.prog-label{font-size:10px;color:var(--muted);margin-top:4px}
+.identity-block{padding:8px 12px;border-bottom:1px solid var(--border);display:flex;flex-direction:column;gap:5px;flex-shrink:0}
+.id-field{display:flex;align-items:center;gap:6px}
+.id-field label{font-size:10px;color:var(--muted);min-width:46px;text-align:right;flex-shrink:0}
+.id-field input{flex:1;background:var(--card);border:1px solid var(--border);border-radius:5px;color:var(--text);font-family:"DM Sans",sans-serif;font-size:11px;padding:4px 7px;outline:none;transition:border-color .15s}
+.id-field input:focus{border-color:var(--accent)}
+.ans-scroll{flex:1;overflow-y:auto;padding:6px 9px}
+.ans-scroll::-webkit-scrollbar{width:4px}
+.ans-scroll::-webkit-scrollbar-thumb{background:var(--border);border-radius:99px}
+.sec-label{font-size:9.5px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--accent);padding:6px 3px 4px;border-bottom:1px solid var(--border);margin-bottom:3px}
+.q-row{display:flex;align-items:center;gap:5px;padding:4px 3px;border-radius:5px;transition:background .12s}
+.q-row:hover{background:var(--card)}
+.q-num{font-size:10.5px;font-weight:600;color:var(--muted);min-width:20px;text-align:right;flex-shrink:0}
+.opts{display:flex;gap:3px}
+.opt-btn{width:25px;height:25px;border-radius:50%;border:1.5px solid var(--border);background:transparent;color:var(--muted);font-size:10.5px;font-weight:600;cursor:pointer;transition:all .13s;font-family:"DM Sans",sans-serif;display:flex;align-items:center;justify-content:center}
+.opt-btn:hover{border-color:var(--accent);color:var(--accent);background:rgba(78,141,245,.09)}
+.opt-btn.selected{background:var(--accent);border-color:var(--accent);color:#fff;box-shadow:0 0 7px rgba(78,141,245,.4)}
+.essay-row{display:flex;align-items:flex-start;gap:6px;padding:5px 3px;border-radius:5px;transition:background .12s}
+.essay-row:hover{background:var(--card)}
+.essay-ind{width:15px;height:15px;border-radius:3px;border:1.5px solid var(--border);background:transparent;flex-shrink:0;margin-top:2px;cursor:pointer;transition:all .15s}
+.essay-ind.done{background:var(--green);border-color:var(--green)}
+.essay-lbl{font-size:10.5px;color:var(--muted);font-weight:500;line-height:1.4;flex:1;cursor:pointer}
+
+/* MODAL */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);backdrop-filter:blur(6px);z-index:100;justify-content:center;align-items:center}
+.modal-overlay.show{display:flex}
+.modal{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:28px 30px;max-width:420px;width:92%;animation:popIn .25s ease}
+@keyframes popIn{from{transform:scale(.92);opacity:0}to{transform:scale(1);opacity:1}}
+.modal h3{font-family:"Playfair Display",serif;font-size:18px;color:var(--gold);margin-bottom:16px;text-align:center}
+.score-wrap{text-align:center;margin-bottom:14px}
+.score-num{font-size:62px;font-weight:700;color:var(--accent);line-height:1}
+.score-sub{font-size:11px;color:var(--muted);margin-top:3px}
+.stat-row{display:flex;justify-content:center;gap:22px;margin-bottom:14px}
+.stat-item{text-align:center}
+.stat-val{font-size:20px;font-weight:700}
+.stat-lbl{font-size:10px;color:var(--muted)}
+.modal-info{font-size:11.5px;color:var(--muted);background:var(--panel);border-radius:7px;padding:10px 13px;line-height:1.7;margin-bottom:14px}
+.warn-box{background:rgba(245,200,66,.07);border:1px solid rgba(245,200,66,.3);border-radius:7px;padding:9px 12px;font-size:11px;color:var(--gold);margin-bottom:12px;line-height:1.55;display:none}
+.send-status{text-align:center;font-size:12px;min-height:20px;margin-bottom:10px;color:var(--muted);font-weight:500}
+.send-status.ok{color:var(--green)}
+.send-status.err{color:var(--red)}
+.modal-btns{display:flex;gap:8px;justify-content:center;flex-wrap:wrap}
+.btn-kirim{background:var(--green);border:none;color:#0d1016;border-radius:var(--r);padding:9px 24px;font-family:"DM Sans",sans-serif;font-size:13px;font-weight:700;cursor:pointer;transition:opacity .15s}
+.btn-kirim:hover{opacity:.85}
+.btn-kirim:disabled{opacity:.4;cursor:not-allowed}
+.btn-tutup{background:var(--border);border:none;color:var(--text);border-radius:var(--r);padding:9px 24px;font-family:"DM Sans",sans-serif;font-size:13px;font-weight:600;cursor:pointer;transition:background .15s}
+.btn-tutup:hover{background:var(--muted)}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="h-title">ASAT <span>SENI BUDAYA</span> &middot; Kelas X</div>
+  <div class="h-meta">
+    <span><b>Sekolah:</b> SRMA 3 Tebing Tinggi</span>
+    <span id="timer-display"><b>Waktu:</b> 100:00</span>
+  </div>
+  <button class="btn-submit" onclick="openSubmit()">Selesai &amp; Kirim</button>
+</header>
+
+<div class="main">
+
+  <div class="pdf-panel">
+    <div class="pdf-toolbar">
+      <span class="page-info">Soal SAS Seni Budaya Kelas X</span>
+    </div>
+    <div id="pdf-container">
+      <iframe src="SAS SENI.pdf" title="Soal Seni Budaya"></iframe>
+    </div>
+  </div>
+
+  <div class="answer-panel">
+    <div class="ans-header">
+      <h2>Lembar Jawaban</h2>
+      <div class="prog-wrap"><div class="prog-bar" id="prog-bar" style="width:0%"></div></div>
+      <div class="prog-label" id="prog-label">0 / 50 terjawab</div>
+    </div>
+    <div class="identity-block">
+      <div class="id-field"><label>Nama</label><input type="text" id="id-nama" placeholder="Nama lengkap siswa" autocomplete="off"></div>
+      <div class="id-field"><label>No. Absen</label><input type="text" id="id-absen" placeholder="Nomor absen" autocomplete="off"></div>
+    </div>
+    <div class="ans-scroll">
+      <div class="sec-label">Pilihan Ganda (1&ndash;45)</div>
+      <div id="pg-list"></div>
+      <div class="sec-label" style="margin-top:9px">Essai (1&ndash;5)</div>
+      <div id="essay-list"></div>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modal">
+  <div class="modal">
+    <h3>Hasil &amp; Pengiriman Nilai</h3>
+    <div class="score-wrap">
+      <div class="score-num" id="m-score">0</div>
+      <div class="score-sub">Nilai Pilihan Ganda (skala 100)</div>
+    </div>
+    <div class="stat-row">
+      <div class="stat-item"><div class="stat-val" id="m-benar" style="color:var(--green)">0</div><div class="stat-lbl">Benar</div></div>
+      <div class="stat-item"><div class="stat-val" id="m-salah" style="color:var(--red)">0</div><div class="stat-lbl">Salah</div></div>
+      <div class="stat-item"><div class="stat-val" id="m-kosong" style="color:var(--muted)">0</div><div class="stat-lbl">Kosong</div></div>
+      <div class="stat-item"><div class="stat-val" id="m-essay" style="color:var(--gold)">0</div><div class="stat-lbl">Essai &#10003;</div></div>
+    </div>
+    <div class="modal-info" id="m-info"></div>
+    <div class="warn-box" id="warn-box">
+      &#9881; <b>Konfigurasi belum lengkap:</b> Ganti <code>APPS_SCRIPT_URL</code> dengan URL Web App Apps Script Anda.
+    </div>
+    <div class="send-status" id="send-status"></div>
+    <div class="modal-btns">
+      <button class="btn-kirim" id="btn-kirim" onclick="sendToSheet()">&#128228; Kirim ke Google Sheet</button>
+      <button class="btn-tutup" onclick="closeApplication()">Tutup Aplikasi</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// MASUKKAN URL GOOGLE APPS SCRIPT ANDA DI SINI
+var APPS_SCRIPT_URL = "URL_APPS_SCRIPT_ANDA_DI_SINI";
+
+// Kunci jawaban otomatis Seni Budaya:
+var ANSWER_KEY = {
+  1:"D",  2:"B",  3:"C",  4:"B",  5:"C",
+  6:"C",  7:"C",  8:"C",  9:"B",  10:"C",
+  11:"C",  12:"E",  13:"C",  14:"B",  15:"D",
+  16:"C",  17:"C",  18:"B",  19:"B",  20:"C",
+  21:"C",  22:"B",  23:"C",  24:"C",  25:"C",
+  26:"A",  27:"C",  28:"B",  29:"C",  30:"D",
+  31:"C",  32:"B",  33:"D",  34:"B",  35:"C",
+  36:"C",  37:"B",  38:"C",  39:"B",  40:"C",
+  41:"C",  42:"C",  43:"A",  44:"C",  45:"C"
+};
+
+var totalPG = 45;
+var totalEssay = 5;
+var userAnswers = {};
+var essayAnswers = {};
+
+// Logika Timer 100 Menit
+var totalWaktuDetik = 100 * 60;
+var hitungMundur;
+
+function startTimer() {
+  hitungMundur = setInterval(function() {
+    var menit = Math.floor(totalWaktuDetik / 60);
+    var detik = totalWaktuDetik % 60;
+    
+    menit = menit < 10 ? '0' + menit : menit;
+    detik = detik < 10 ? '0' + detik : detik;
+    
+    document.getElementById('timer-display').innerHTML = `<b>Sisa Waktu:</b> ${menit}:${detik}`;
+    
+    if (totalWaktuDetik <= 0) {
+      clearInterval(hitungMundur);
+      alert("Waktu 100 menit telah habis! Aplikasi akan ditutup.");
+      closeApplication();
+    }
+    
+    totalWaktuDetik--;
+  }, 1000);
+}
+
+function initApp() {
+  startTimer();
+  
+  var pgHtml = "";
+  for(let i=1; i<=totalPG; i++){
+    pgHtml += `<div class="q-row">
+      <div class="q-num">${i}.</div>
+      <div class="opts">`;
+    ['A','B','C','D','E'].forEach(opt => {
+      pgHtml += `<button class="opt-btn" onclick="selectPG(${i}, '${opt}')" id="btn-${i}-${opt}">${opt}</button>`;
+    });
+    pgHtml += `</div></div>`;
+  }
+  document.getElementById("pg-list").innerHTML = pgHtml;
+
+  var essayHtml = "";
+  for(let i=1; i<=totalEssay; i++){
+    essayHtml += `<div class="essay-row" onclick="toggleEssay(${i})">
+      <div class="essay-ind" id="ind-e${i}"></div>
+      <div class="essay-lbl">Soal Essai ${i} sudah dikerjakan</div>
+    </div>`;
+  }
+  document.getElementById("essay-list").innerHTML = essayHtml;
+}
+
+function selectPG(q, opt) {
+  ['A','B','C','D','E'].forEach(o => {
+    document
