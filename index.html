@@ -59,14 +59,7 @@ header{display:flex;align-items:center;gap:14px;padding:9px 18px;background:var(
 .modal{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:28px 30px;max-width:420px;width:92%;animation:popIn .25s ease}
 @keyframes popIn{from{transform:scale(.92);opacity:0}to{transform:scale(1);opacity:1}}
 .modal h3{font-family:"Playfair Display",serif;font-size:18px;color:var(--gold);margin-bottom:16px;text-align:center}
-.score-wrap{text-align:center;margin-bottom:14px}
-.score-num{font-size:62px;font-weight:700;color:var(--accent);line-height:1}
-.score-sub{font-size:11px;color:var(--muted);margin-top:3px}
-.stat-row{display:flex;justify-content:center;gap:22px;margin-bottom:14px}
-.stat-item{text-align:center}
-.stat-val{font-size:20px;font-weight:700}
-.stat-lbl{font-size:10px;color:var(--muted)}
-.modal-info{font-size:11.5px;color:var(--muted);background:var(--panel);border-radius:7px;padding:10px 13px;line-height:1.7;margin-bottom:14px}
+.modal-info{font-size:12px;color:var(--text);background:var(--panel);border-radius:7px;padding:14px 16px;line-height:1.7;margin-bottom:14px}
 .warn-box{background:rgba(245,200,66,.07);border:1px solid rgba(245,200,66,.3);border-radius:7px;padding:9px 12px;font-size:11px;color:var(--gold);margin-bottom:12px;line-height:1.55;display:none}
 .send-status{text-align:center;font-size:12px;min-height:20px;margin-bottom:10px;color:var(--muted);font-weight:500}
 .send-status.ok{color:var(--green)}
@@ -122,31 +115,23 @@ header{display:flex;align-items:center;gap:14px;padding:9px 18px;background:var(
 
 <div class="modal-overlay" id="modal">
   <div class="modal">
-    <h3>Hasil &amp; Pengiriman Nilai</h3>
-    <div class="score-wrap">
-      <div class="score-num" id="m-score">0</div>
-      <div class="score-sub">Nilai Pilihan Ganda (skala 100)</div>
-    </div>
-    <div class="stat-row">
-      <div class="stat-item"><div class="stat-val" id="m-benar" style="color:var(--green)">0</div><div class="stat-lbl">Benar</div></div>
-      <div class="stat-item"><div class="stat-val" id="m-salah" style="color:var(--red)">0</div><div class="stat-lbl">Salah</div></div>
-      <div class="stat-item"><div class="stat-val" id="m-kosong" style="color:var(--muted)">0</div><div class="stat-lbl">Kosong</div></div>
-      <div class="stat-item"><div class="stat-val" id="m-essay" style="color:var(--gold)">0</div><div class="stat-lbl">Essai &#10003;</div></div>
-    </div>
+    <h3>Konfirmasi Pengiriman</h3>
+    
     <div class="modal-info" id="m-info"></div>
+    
     <div class="warn-box" id="warn-box">
       &#9881; <b>Konfigurasi belum lengkap:</b> Ganti <code>APPS_SCRIPT_URL</code> dengan URL Web App Apps Script Anda.
     </div>
     <div class="send-status" id="send-status"></div>
     <div class="modal-btns">
-      <button class="btn-kirim" id="btn-kirim" onclick="sendToSheet()">&#128228; Kirim ke Google Sheet</button>
-      <button class="btn-tutup" onclick="closeApplication()">Tutup Aplikasi</button>
+      <button class="btn-kirim" id="btn-kirim" onclick="sendToSheet()">&#128228; Ya, Kirim Jawaban</button>
+      <button class="btn-tutup" onclick="closeApplication()">Tutup / Batal</button>
     </div>
   </div>
 </div>
 
 <script>
-var APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyDPGphf5jiRlUENQVa1RirDgdjfnTaTT2fXl4sW2EQqlKwyMoIhkgk4D4YIYsrfJFQ/exec";
+var APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzlwoNfu7lc-BBauxtUfwqRcBtPa2YFohE3XHyTNUjt2bJ-oXPLqnrKGCCg03NfKAGp/exec";
 
 // Kunci jawaban otomatis Seni Budaya:
 var ANSWER_KEY = {
@@ -182,8 +167,8 @@ function startTimer() {
     
     if (totalWaktuDetik <= 0) {
       clearInterval(hitungMundur);
-      alert("Waktu 100 menit telah habis! Aplikasi akan ditutup.");
-      closeApplication();
+      alert("Waktu 100 menit telah habis! Aplikasi akan ditutup dan mengirim jawaban.");
+      openSubmit(); // Langsung buka konfirmasi
     }
     
     totalWaktuDetik--;
@@ -247,6 +232,7 @@ function updateProgress() {
   document.getElementById("prog-label").innerText = `${totalAns} / ${maxTotal} terjawab`;
 }
 
+// Fungsi dipertahankan untuk mengkalkulasi skor yang dikirim ke gsheet
 function calculateScore() {
   var benar = 0;
   var salah = 0;
@@ -279,12 +265,25 @@ function openSubmit() {
   
   clearInterval(hitungMundur); // Hentikan timer setelah klik selesai
   
-  var sc = calculateScore();
-  document.getElementById("m-score").innerText = sc.nilai;
-  document.getElementById("m-benar").innerText = sc.benar;
-  document.getElementById("m-salah").innerText = sc.salah;
-  document.getElementById("m-kosong").innerText = sc.kosong;
-  document.getElementById("m-essay").innerText = sc.essayCount;
+  // Hitung jumlah soal untuk ditampilkan ke siswa (Bukan Nilai/Skor)
+  var kosongPG = 0;
+  for(let i=1; i<=totalPG; i++) {
+      if(!userAnswers[i]) kosongPG++;
+  }
+  var terjawabPG = totalPG - kosongPG;
+  var essayCount = Object.values(essayAnswers).filter(v=>v).length;
+  
+  var infoHtml = `<b>Status Pengerjaan Anda:</b><br><br>`;
+  infoHtml += `&#x2022; Pilihan Ganda: <b>${terjawabPG}</b> diisi, <b>${kosongPG}</b> kosong.<br>`;
+  
+  if(totalEssay - essayCount > 0) {
+      infoHtml += `&#x2022; Essai: <span style="color:var(--red)"><b>${totalEssay - essayCount}</b> soal belum ditandai selesai.</span><br>`;
+  } else {
+      infoHtml += `&#x2022; Essai: <span style="color:var(--green)">Semua soal sudah ditandai.</span><br>`;
+  }
+  
+  infoHtml += `<br>Apakah Anda sudah yakin ingin mengumpulkan lembar jawaban ini?`;
+  document.getElementById("m-info").innerHTML = infoHtml;
   
   document.getElementById("modal").classList.add("show");
   
@@ -296,10 +295,9 @@ function openSubmit() {
 }
 
 function closeApplication() {
-  // Mencoba menutup jendela tab browser bawaan
-  window.close();
-  // Fallback jika diblokir browser biasa / memberikan sinyal aplikasi keluar
-  alert("Aplikasi keluar. Silakan tutup tab atau jendela ini.");
+  // Hanya sembunyikan modal jika mereka ingin batal mengumpulkan
+  document.getElementById("modal").classList.remove("show");
+  // Resume timer jika belum habis (opsional, saat ini timer hanya berhenti)
 }
 
 function sendToSheet() {
@@ -325,9 +323,9 @@ function sendToSheet() {
     timestamp    : new Date().toLocaleString("id-ID", {timeZone:"Asia/Jakarta"}),
     nama         : nama,
     absen        : absen,
-    nilai        : sc.nilai,
-    benar        : sc.benar,
-    salah        : sc.salah,
+    nilai        : sc.nilai,      // Nilai diam-diam dikirim di background
+    benar        : sc.benar,      // Skor benar dikirim di background
+    salah        : sc.salah,      // Skor salah dikirim di background
     kosong       : sc.kosong,
     essayMarked  : sc.essayCount,
     jawaban      : jawabanArr.join(","),
@@ -340,32 +338,28 @@ function sendToSheet() {
   st.className = "send-status";
   st.textContent = "⏳ Mengirim data ke Google Sheet...";
 
-  // Gunakan fetch dengan mode no-cors untuk menghindari CORS error
-  // Apps Script doGet menerima parameter via URL query string
   var params = new URLSearchParams();
   for (var key in payload) {
     params.append(key, payload[key]);
   }
   var url = APPS_SCRIPT_URL + "?" + params.toString();
 
-  // Metode 1: fetch no-cors (tidak bisa baca response, tapi data terkirim)
+  // Metode fetch no-cors
   fetch(url, { method: "GET", mode: "no-cors" })
     .then(function() {
       st.className = "send-status ok";
-      st.textContent = "✅ Nilai berhasil dikirim ke Google Sheet!";
+      st.textContent = "✅ Jawaban berhasil dikirim! Silakan tutup aplikasi.";
       btn.textContent = "✅ Terkirim";
-      // Kirim ulang via image trick sebagai fallback konfirmasi
       var img = new Image();
       img.src = url + "&_fallback=1";
     })
     .catch(function(err) {
-      // Fallback: coba dengan image trick (bypass CORS sepenuhnya)
       st.className = "send-status";
       st.textContent = "⏳ Mencoba metode alternatif...";
       var img = new Image();
       img.onload = img.onerror = function() {
         st.className = "send-status ok";
-        st.textContent = "✅ Data terkirim ke Google Sheet!";
+        st.textContent = "✅ Jawaban terkirim! Silakan tutup aplikasi.";
         btn.textContent = "✅ Terkirim";
       };
       img.src = url;
